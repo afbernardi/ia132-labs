@@ -98,13 +98,14 @@ def _determiner_priorite(sous_total: int | float) -> str:
 def traiter(commandes, region, client_premium):
     resultat = []
     for commande in commandes:
-        if commande["statut"] != "annulee":
-            if commande["poids"] > 0:
-                sous_total = _calculer_sous_total(commande["lignes"])
-                frais_livraison = _calculer_frais_livraison(commande["poids"], region)
-                frais_livraison = _ajuster_frais_premium(frais_livraison, sous_total, client_premium)
-                priorite = _determiner_priorite(sous_total)
-                resultat.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
-            else:
-                print("poids invalide " + str(commande["id"]))
+        if commande["statut"] == "annulee":
+            continue
+        if not (commande["poids"] > 0):
+            print("poids invalide " + str(commande["id"]))
+            continue
+        sous_total = _calculer_sous_total(commande["lignes"])
+        frais_livraison = _calculer_frais_livraison(commande["poids"], region)
+        frais_livraison = _ajuster_frais_premium(frais_livraison, sous_total, client_premium)
+        priorite = _determiner_priorite(sous_total)
+        resultat.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
     return resultat
