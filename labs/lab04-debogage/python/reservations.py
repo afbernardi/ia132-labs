@@ -44,5 +44,7 @@ def taux_occupation(reservations: list[Reservation], salle: str, heures_ouvertes
     """Part des heures d'ouverture occupées pour une salle, sur les jours où elle est réservée."""
     de_la_salle = [r for r in reservations if r.salle == salle]
     jours = {r.debut.date() for r in de_la_salle}
+    if not jours:
+        return 0
     heures = sum(duree_heures(r) for r in de_la_salle)
     return round(heures / (heures_ouvertes * len(jours)), 2)
