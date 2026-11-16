@@ -5,6 +5,7 @@ Ce module est en production… et le support a ouvert 5 tickets (voir rapport-in
 
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 
 
 @dataclass
@@ -17,7 +18,7 @@ class Reservation:
 
 def duree_heures(r: Reservation) -> float:
     """Durée de la réservation, en heures."""
-    return (r.fin - r.debut).seconds / 3600
+    return (r.fin - r.debut).total_seconds() / 3600
 
 
 def se_chevauchent(a: Reservation, b: Reservation) -> bool:
@@ -31,7 +32,10 @@ def peut_reserver(existantes: list[Reservation], nouvelle: Reservation) -> bool:
 
 def cout(r: Reservation) -> float:
     """Coût de la réservation en dollars, arrondi au cent (la moitié vers le haut)."""
-    return round(r.tarif_horaire * duree_heures(r), 2)
+    duree_secondes = Decimal(str((r.fin - r.debut).total_seconds()))
+    heures = duree_secondes / Decimal(3600)
+    montant = Decimal(str(r.tarif_horaire)) * heures
+    return float(montant.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 def paginer(items: list, page: int, taille: int = 10) -> list:
