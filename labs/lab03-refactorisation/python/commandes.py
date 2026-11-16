@@ -39,26 +39,71 @@ def _calculer_frais_livraison(poids: int | float, region: str) -> int | float:
     return frais_livraison
 
 
+def _calculer_sous_total(lignes: list[dict[str, int | float]]) -> int | float:
+    """Calcule le sous-total des lignes d'une commande.
+
+    Args:
+        lignes: Lignes de la commande avec leur prix et leur quantite.
+
+    Returns:
+        Somme des prix multiplies par les quantites.
+    """
+    sous_total = 0
+    for ligne in lignes:
+        sous_total = sous_total + ligne["prix"] * ligne["qte"]
+    return sous_total
+
+
+def _ajuster_frais_premium(
+    frais_livraison: int | float,
+    sous_total: int | float,
+    client_premium: bool,
+) -> int | float:
+    """Applique les regles de livraison du client premium.
+
+    Args:
+        frais_livraison: Frais de livraison de base.
+        sous_total: Sous-total de la commande.
+        client_premium: Indique si le client est premium.
+
+    Returns:
+        Frais apres application des regles premium.
+    """
+    if client_premium:
+        if sous_total > 100:
+            frais_livraison = 0
+        else:
+            frais_livraison = frais_livraison / 2
+    return frais_livraison
+
+
+def _determiner_priorite(sous_total: int | float) -> str:
+    """Determine la priorite selon le sous-total.
+
+    Args:
+        sous_total: Sous-total de la commande.
+
+    Returns:
+        Niveau de priorite de la commande.
+    """
+    if sous_total > 500:
+        priorite = "haute"
+    elif sous_total > 100:
+        priorite = "normale"
+    else:
+        priorite = "basse"
+    return priorite
+
+
 def traiter(commandes, region, client_premium):
     resultat = []
     for commande in commandes:
         if commande["statut"] != "annulee":
             if commande["poids"] > 0:
-                sous_total = 0
-                for ligne in commande["lignes"]:
-                    sous_total = sous_total + ligne["prix"] * ligne["qte"]
+                sous_total = _calculer_sous_total(commande["lignes"])
                 frais_livraison = _calculer_frais_livraison(commande["poids"], region)
-                if client_premium:
-                    if sous_total > 100:
-                        frais_livraison = 0
-                    else:
-                        frais_livraison = frais_livraison / 2
-                if sous_total > 500:
-                    priorite = "haute"
-                elif sous_total > 100:
-                    priorite = "normale"
-                else:
-                    priorite = "basse"
+                frais_livraison = _ajuster_frais_premium(frais_livraison, sous_total, client_premium)
+                priorite = _determiner_priorite(sous_total)
                 resultat.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
             else:
                 print("poids invalide " + str(commande["id"]))
