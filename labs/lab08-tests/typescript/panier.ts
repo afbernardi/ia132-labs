@@ -5,7 +5,12 @@ export const QUANTITE_MAX = 99;
 export const SEUIL_LIVRAISON_GRATUITE = 5_000;
 export const FRAIS_LIVRAISON = 799;
 
-export class StockInsuffisant extends Error {}
+export class StockInsuffisant extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'StockInsuffisant';
+  }
+}
 
 export type Produit = { sku: string; nom: string; prix: number; stock: number };
 
