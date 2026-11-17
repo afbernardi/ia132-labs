@@ -41,6 +41,12 @@ def test_jeton_stable_et_propre_a_chaque_utilisateur(service):
     assert service.jeton(1) != service.jeton(2)
 
 
+def test_jeton_exige_un_secret_d_environnement(monkeypatch):
+    monkeypatch.delenv("NOTES_SECRET", raising=False)
+    with pytest.raises(ValueError, match="NOTES_SECRET"):
+        NotesService().jeton(1)
+
+
 # ── Sécurité ───────────────────────────────────────────────────────────────
 def test_securite_injection_sql_a_la_connexion(service):
     service.inscrire("ana@exemple.ca", "Correct-Cheval-42")

@@ -5,10 +5,10 @@ Votre mission : la REVUE de cette PR, avec l'aide de l'IA (voir README).
 
 import hashlib
 import hmac
+import os
 import secrets
 import sqlite3
 
-SECRET_KEY = "s3cr3t-prod-2026"
 ITERATIONS_PBKDF2 = 600_000
 
 SCHEMA = """
@@ -57,4 +57,8 @@ class NotesService:
         return row[0] if row else None
 
     def jeton(self, user_id):
-        return hashlib.sha256(f"{user_id}:{SECRET_KEY}".encode()).hexdigest()
+        # HMAC signe le jeton avec un secret fourni par l'environnement.
+        secret = os.environ.get("NOTES_SECRET")
+        if not secret:
+            raise ValueError("La variable d'environnement NOTES_SECRET doit être définie.")
+        return hmac.new(secret.encode(), str(user_id).encode(), hashlib.sha256).hexdigest()
