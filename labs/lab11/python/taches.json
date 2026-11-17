@@ -1,0 +1,24 @@
+{
+  "prochain_id": 3,
+  "taches": [
+    {
+      "id": 1,
+      "titre": "Préparer la démo",
+      "priorite": "haute",
+      "echeance": "2026-11-20",
+      "etiquettes": [
+        "ia",
+        "formation"
+      ],
+      "terminee": false
+    },
+    {
+      "id": 2,
+      "titre": "Test 2",
+      "priorite": "normale",
+      "echeance": null,
+      "etiquettes": [],
+      "terminee": false
+    }
+  ]
+}
