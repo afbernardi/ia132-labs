@@ -1,4 +1,4 @@
-"""Critères d'acceptation du pipeline CI (rouges tant que .github/workflows/ci.yml n'existe pas).
+"""Critères d'acceptation du pipeline CI (rouges tant que les TODO restent à compléter).
 
     pytest labs/lab09-ci/python/test_workflow.py
 """
@@ -11,7 +11,7 @@ WORKFLOW = RACINE / ".github" / "workflows" / "ci.yml"
 
 
 def contenu() -> str:
-    assert WORKFLOW.exists(), "créez .github/workflows/ci.yml (partez de labs/lab09-ci/ci-a-completer.yml)"
+    assert WORKFLOW.exists(), "créez .github/workflows/ci.yml (partez de labs/lab09-ci/ci.yml)"
     return WORKFLOW.read_text(encoding="utf-8")
 
 

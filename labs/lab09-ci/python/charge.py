@@ -2,8 +2,10 @@
 
     python charge.py                        # 2 000 requêtes, 20 utilisateurs simultanés
     python charge.py 5000 50                # 5 000 requêtes, 50 utilisateurs
+    python charge.py 5000 100 pic           # 5 000 créations, 100 utilisateurs
 
-Scénario : 1 création de lien pour 4 visites (80 % de lectures). L'API démarre dans le processus.
+Scénario par défaut : 1 création pour 4 visites (80 % de lectures). Le scénario pic
+effectue uniquement des créations. L'API démarre dans le processus.
 Objectif de service (à vérifier) : p95 < 50 ms et moins de 1 % d'erreurs.
 """
 
@@ -31,10 +33,10 @@ class SansRedirection(urllib.request.HTTPRedirectHandler):
 ouvrir = urllib.request.build_opener(SansRedirection).open
 
 
-def appel(base: str, codes: list[str]) -> tuple[float, bool]:
+def appel(base: str, codes: list[str], taux_creations: float) -> tuple[float, bool]:
     t0 = time.perf_counter()
     try:
-        if not codes or random.random() < 0.2:  # noqa: S311 (simulation, pas de cryptographie)
+        if not codes or random.random() < taux_creations:  # noqa: S311 (simulation, pas de cryptographie)
             corps = json.dumps({"url": f"https://exemple.ca/{random.randrange(10**6)}"}).encode()  # noqa: S311
             req = urllib.request.Request(base + "/liens", data=corps, method="POST")
             with ouvrir(req, timeout=5) as r:
@@ -56,6 +58,10 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     total = int(sys.argv[1]) if len(sys.argv) > 1 else 2_000
     utilisateurs = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+    scenario = sys.argv[3] if len(sys.argv) > 3 else "mixte"
+    if scenario not in {"mixte", "pic"}:
+        raise ValueError("scénario attendu : 'mixte' ou 'pic'")
+    taux_creations = 1.0 if scenario == "pic" else 0.2
     srv = creer_serveur()
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"
@@ -63,14 +69,19 @@ def main() -> int:
 
     t0 = time.perf_counter()
     with ThreadPoolExecutor(utilisateurs) as pool:
-        resultats = list(pool.map(lambda _: appel(base, codes), range(total)))
+        resultats = list(
+            pool.map(lambda _: appel(base, codes, taux_creations), range(total))
+        )
     duree = time.perf_counter() - t0
     srv.shutdown()
 
     latences = sorted(ms for ms, _ in resultats)
     erreurs = sum(not ok for _, ok in resultats) / total
     p50, p95, p99 = (latences[int(len(latences) * q) - 1] for q in (0.50, 0.95, 0.99))
-    print(f"{total} requêtes · {utilisateurs} utilisateurs · {duree:.1f} s · {total / duree:.0f} req/s")
+    print(
+        f"{total} requêtes · {utilisateurs} utilisateurs · {scenario} "
+        f"({taux_creations:.0%} créations) · {duree:.1f} s · {total / duree:.0f} req/s"
+    )
     print(f"latence  p50 {p50:.1f} ms · p95 {p95:.1f} ms · p99 {p99:.1f} ms · moyenne {statistics.mean(latences):.1f} ms")
     print(f"erreurs  {erreurs:.2%}")
     ok = p95 < P95_MAX_MS and erreurs < ERREURS_MAX

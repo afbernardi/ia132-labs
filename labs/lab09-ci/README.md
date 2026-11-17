@@ -13,7 +13,7 @@ Faire écrire par l’IA des **tests d’intégration** sur une vraie API, simul
 - `api.py` / `api.ts` : une mini-API de liens courts (création, redirection, statistiques), sans dépendance.
 - Tests unitaires existants (verts) ; `test_integration.py` / `integration.test.ts` : un seul test (`/sante`).
 - `charge.py` / `charge.ts` : test de charge (80 % de lectures) avec objectif p95 < 50 ms et < 1 % d’erreurs.
-- `ci-a-completer.yml` : un pipeline à trous ; `python/test_workflow.py` : ses critères d’acceptation (rouges).
+- `ci.yml` : un pipeline à trous ; `python/test_workflow.py` : ses critères d’acceptation (rouges tant que les TODO restent à compléter).
 
 ```bash
 pytest labs/lab09-ci                               # ou : npm run test:lab09
@@ -28,7 +28,7 @@ python labs/lab09-ci/python/charge.py              # ou : node labs/lab09-ci/typ
    Visez au moins 6 scénarios, dont **200 créations concurrentes** qui doivent donner 200 codes uniques.
 2. **Couverture (3 min)** — `pytest labs/lab09-ci/python --cov=api --cov-report=term-missing` : ≥ 80 % ?
 3. **Charge (7 min)** — Lancez `charge.py`, puis `charge.py 5000 100`. Faites **interpréter** les chiffres à l’IA (p50 vs p99, débit, erreurs). Demandez-lui un second scénario « pic » (100 % de créations) et comparez.
-4. **Pipeline (12 min)** — Copiez `ci-a-completer.yml` dans `.github/workflows/ci.yml` et faites compléter les 6 TODO par l’IA. Validez localement :
+4. **Pipeline (12 min)** — Copiez `ci.yml` dans `.github/workflows/ci.yml` et faites compléter les 6 TODO par l’IA. Validez localement :
    ```bash
    pytest labs/lab09-ci/python/test_workflow.py
    ```

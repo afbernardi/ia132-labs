@@ -1,0 +1,39 @@
+# Pipeline CI à compléter — copiez ce fichier dans .github/workflows/ci.yml
+# Les critères d'acceptation sont dans labs/lab09-ci/test_workflow.py.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  # Déclenche aussi la CI pour chaque pull request.
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    # Vérifie le job avec Python 3.11 et 3.13.
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # Réutilise les dépendances pip pour accélérer les prochaines exécutions.
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      # Vérifie le style Python du lab 09 avec Ruff.
+      - run: ruff check labs/lab09-ci
+      # Exécute les tests du lab 09 et exige au moins 80 % de couverture.
+      - run: pytest labs/lab09-ci/python --cov=api --cov-report=term-missing --cov-fail-under=80
+
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Exécute les tests TypeScript unitaires et d’intégration du lab 09.
+      - run: node --test "labs/lab09-ci/typescript/*.test.ts"
