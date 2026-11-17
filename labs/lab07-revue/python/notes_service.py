@@ -4,9 +4,12 @@ Votre mission : la REVUE de cette PR, avec l'aide de l'IA (voir README).
 """
 
 import hashlib
+import hmac
+import secrets
 import sqlite3
 
 SECRET_KEY = "s3cr3t-prod-2026"
+ITERATIONS_PBKDF2 = 600_000
 
 SCHEMA = """
 create table if not exists users (id integer primary key, email text unique, password text);
@@ -20,22 +23,29 @@ class NotesService:
         self.bd.executescript(SCHEMA)
 
     def inscrire(self, email, mot_de_passe):
-        h = hashlib.md5(mot_de_passe.encode()).hexdigest()
+        # Un sel aleatoire et PBKDF2 ralentissent les attaques hors ligne.
+        sel = secrets.token_bytes(16)
+        h = hashlib.pbkdf2_hmac("sha256", mot_de_passe.encode(), sel, ITERATIONS_PBKDF2)
+        mot_de_passe_stocke = f"{sel.hex()}${h.hex()}"
         # Les paramètres empêchent les données saisies de modifier la requête SQL.
-        cur = self.bd.execute("insert into users (email, password) values (?, ?)", (email, h))
+        cur = self.bd.execute(
+            "insert into users (email, password) values (?, ?)",
+            (email, mot_de_passe_stocke),
+        )
         self.bd.commit()
         return cur.lastrowid
 
     def connecter(self, email, mot_de_passe):
-        h = hashlib.md5(mot_de_passe.encode()).hexdigest()
         try:
-            row = self.bd.execute(
-                "select id from users where email = ? and password = ?",
-                (email, h),
-            ).fetchone()
+            row = self.bd.execute("select id, password from users where email = ?", (email,)).fetchone()
         except Exception:
             return None
-        return row[0] if row else None
+        if row is None:
+            return None
+        sel_hex, h_stocke = row[1].split("$", 1)
+        sel = bytes.fromhex(sel_hex)
+        h_calcule = hashlib.pbkdf2_hmac("sha256", mot_de_passe.encode(), sel, ITERATIONS_PBKDF2)
+        return row[0] if hmac.compare_digest(h_stocke, h_calcule.hex()) else None
 
     def ajouter_note(self, user_id, contenu):
         cur = self.bd.execute("insert into notes (owner, contenu) values (?, ?)", (user_id, contenu))
